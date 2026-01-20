@@ -1,22 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>拾光長箋 - 捕捉歲月的微光</title>
-    
-    <!-- PWA / iOS Optimization -->
+    <!-- PWA & iPad Optimization -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="拾光長箋">
     
-    <!-- Scripts & CDNs -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide-react@0.284.0/dist/umd/lucide-react.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script>
         tailwind.config = {
             theme: {
@@ -36,7 +30,6 @@
             }
         }
     </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500&display=swap');
         
@@ -44,459 +37,44 @@
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #FDFCF8;
             -webkit-tap-highlight-color: transparent;
-            overflow: hidden;
-            margin: 0;
-            height: 100vh;
+            overflow: hidden; /* Prevent body scroll, use container scroll */
         }
 
-        .serif { font-family: 'Noto Serif TC', serif; }
-
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        input:focus, textarea:focus { outline: none; }
-
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        @keyframes scaleUp {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+        .serif {
+            font-family: 'Noto Serif TC', serif;
         }
-        .animate-scale-up { animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-        @keyframes bookOpen {
-          from { opacity: 0; transform: scale(0.94) translateY(30px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
+        /* Hide Scrollbar */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        .animate-book-open { animation: bookOpen 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        /* Custom input focus */
+        input:focus, textarea:focus {
+            outline: none;
+        }
+
+        /* Smooth transitions */
+        .transition-all {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
 </head>
 <body class="bg-healing-bg">
     <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
-        const { 
-            Calendar, Layout, Lightbulb, Settings, Download, Upload, Plus, Trash2, 
-            CheckCircle2, ChevronRight, Sparkles, Scroll, Wind, Archive, X, 
-            ChevronDown, Mountain, GripVertical, Clock, Send, Eye, EyeOff, BookOpen, 
-            Edit3, Check, Search, SlidersHorizontal, Heart, RotateCcw
-        } = lucide;
-
-        // --- CONSTANTS ---
-        const MORANDI_COLORS = ['#E2B4BD', '#9DBEBB', '#778DA9', '#A3B18A', '#D4A373', '#BC8A5F', '#957DAD', '#FFD1DC', '#D6E2E9'];
-        const STORAGE_KEY = 'timeless_epistles_data_v1';
-
-        // --- COMPONENTS ---
-
-        const TabButton = ({ active, onClick, icon, label }) => (
-            <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${active ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
-                {icon}
-                <span className="text-sm font-medium hidden md:inline">{label}</span>
-            </button>
-        );
-
-        const MatrixView = ({ projects, matrix, selectedMonth, onCellUpdate, onProjectUpdate, onAddProject, onDeleteProject }) => {
-            const days = Array.from({ length: 31 }, (_, i) => i + 1);
-            const [editingProject, setEditingProject] = useState(null);
-            const today = new Date();
-            const todayDay = today.getDate();
-            const todayMonthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-            const projectsToShow = useMemo(() => projects.filter(p => !p.archived), [projects]);
-
-            return (
-                <div className="w-full h-full relative overflow-auto hide-scrollbar px-6 py-4">
-                    {projectsToShow.length === 0 ? (
-                        <div className="h-full w-full flex flex-col items-center justify-center space-y-6 animate-fade-in">
-                            <div className="w-24 h-24 bg-white rounded-[40px] shadow-soft flex items-center justify-center border border-slate-50/50">
-                                <Mountain size={48} className="text-[#cbb9d6] opacity-60" />
-                            </div>
-                            <div className="text-center space-y-2">
-                                <p className="serif text-xl text-slate-500 font-medium tracking-widest">當你決定爬山時，你已經在山頂了。</p>
-                                <p className="text-xs text-slate-300 uppercase tracking-[0.2em]">Every start is a peak in its own right</p>
-                            </div>
-                            <button onClick={onAddProject} className="mt-4 px-8 py-3 bg-white text-slate-500 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:bg-slate-50 transition-all text-sm font-medium">開啟新的長箋</button>
-                        </div>
-                    ) : (
-                        <div className="min-w-[1000px] inline-block align-middle pb-20">
-                            <table className="border-separate border-spacing-0 w-full table-fixed">
-                                <thead>
-                                    <tr className="sticky top-0 z-40 bg-healing-bg/95 backdrop-blur-sm">
-                                        <th className="w-24 h-14 border-b border-r border-[#EEEDF5] text-xs text-slate-400 uppercase tracking-tighter sticky left-0 z-50 bg-healing-bg font-bold">
-                                            <span>{selectedMonth}</span>
-                                        </th>
-                                        {projectsToShow.map(project => (
-                                            <th key={project.id} className="min-w-[120px] px-2 h-14 border-b border-r border-[#EEEDF5] relative group/header overflow-hidden" onDoubleClick={() => setEditingProject(project)}>
-                                                <div className="w-full flex items-center justify-center font-bold text-sm text-slate-600 truncate px-1 cursor-pointer">
-                                                    <span className="truncate">{project.name}</span>
-                                                </div>
-                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full opacity-60" style={{ backgroundColor: project.color }} />
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {days.map(day => {
-                                        const isToday = day === todayDay && selectedMonth === todayMonthStr;
-                                        return (
-                                            <tr key={day} className={`group hover:bg-white/30 transition-colors ${isToday ? 'bg-[#cbb9d6]/20' : ''}`}>
-                                                <td className={`w-24 min-h-[4.5rem] border-b border-r border-[#EEEDF5] text-center sticky left-0 z-30 text-sm font-medium ${isToday ? 'bg-[#cbb9d6] text-white' : 'bg-healing-bg text-slate-400'}`}>{day}</td>
-                                                {projectsToShow.map(project => {
-                                                    const dayStr = String(day).padStart(2, '0');
-                                                    const key = `${selectedMonth}-${dayStr}-${project.id}`;
-                                                    const val = matrix[key] || '';
-                                                    return (
-                                                        <td key={project.id} className="min-h-[4.5rem] border-b border-r border-[#EEEDF5] align-top p-0" style={{ backgroundColor: val ? `${project.color}15` : 'transparent' }}>
-                                                            <textarea 
-                                                                value={val}
-                                                                onChange={(e) => onCellUpdate(day, project.id, e.target.value)}
-                                                                className="w-full min-h-[4.5rem] p-3 text-sm bg-transparent text-slate-600 resize-none leading-relaxed hide-scrollbar focus:bg-white/40 transition-colors"
-                                                            />
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-
-                    {projectsToShow.length < 9 && (
-                        <button onClick={onAddProject} className="fixed bottom-8 right-8 w-14 h-14 bg-[#cbb9d6] text-white rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all flex items-center justify-center z-50">
-                            <Plus size={28} />
-                        </button>
-                    )}
-
-                    {editingProject && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-sm px-4">
-                            <div className="bg-white w-full max-w-sm rounded-[32px] shadow-2xl p-8 space-y-6 border border-slate-50 animate-scale-up">
-                                <div className="flex justify-between items-center">
-                                    <h3 className="serif text-xl font-bold text-slate-700">管理長箋</h3>
-                                    <button onClick={() => setEditingProject(null)}><X size={20} className="text-slate-300" /></button>
-                                </div>
-                                <div className="space-y-4">
-                                    <input type="text" value={editingProject.name} onChange={(e) => setEditingProject({...editingProject, name: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-4 py-3 text-slate-700" />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button onClick={() => { onProjectUpdate(editingProject.id, { name: editingProject.name, archived: true }); setEditingProject(null); }} className="bg-slate-50 text-slate-600 py-3 rounded-2xl hover:bg-slate-100 transition-colors flex items-center justify-center space-x-2"><Archive size={16} /><span>歸檔</span></button>
-                                        <button onClick={() => { if(confirm("確定永久刪除？")) { onDeleteProject(editingProject.id); setEditingProject(null); } }} className="bg-red-50 text-red-400 py-3 rounded-2xl hover:bg-red-100 flex items-center justify-center space-x-2"><Trash2 size={16} /><span>刪除</span></button>
-                                    </div>
-                                    <button onClick={() => { onProjectUpdate(editingProject.id, { name: editingProject.name }); setEditingProject(null); }} className="w-full bg-slate-700 text-white py-4 rounded-2xl shadow-md hover:bg-slate-800 transition-colors font-bold">保存修改</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const DashboardView = ({ projects, matrix, ideas, onProjectUpdate }) => {
-            const [selectedProject, setSelectedProject] = useState(null);
-            const activeProjects = projects.filter(p => !p.archived);
-            const archivedProjects = projects.filter(p => p.archived);
-
-            const getMilestones = (projectId) => {
-                return Object.entries(matrix)
-                    .filter(([key, val]) => key.endsWith(`-${projectId}`) && val.trim() !== '')
-                    .map(([key, val]) => ({
-                        dateStr: key.split('-').slice(0, 3).join('-'),
-                        text: val
-                    }))
-                    .sort((a, b) => b.dateStr.localeCompare(a.dateStr));
-            };
-
-            const renderCard = (project, isArchived) => {
-                const milestones = getMilestones(project.id);
-                return (
-                    <div key={project.id} onClick={() => setSelectedProject(project)} className={`bg-white rounded-[32px] p-6 shadow-soft border border-slate-50 flex flex-col hover:shadow-lg transition-all cursor-pointer ${isArchived ? 'opacity-80' : ''}`}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: project.color }} />
-                                <h3 className="text-xl font-bold text-slate-700 serif truncate max-w-[150px]">{project.name}</h3>
-                            </div>
-                            {isArchived ? <RotateCcw size={18} className="text-slate-300" /> : <ChevronRight size={20} className="text-slate-200" />}
-                        </div>
-                        <div className="space-y-4">
-                            <h4 className="text-xs uppercase tracking-widest text-slate-400 font-bold flex items-center"><CheckCircle2 size={14} className="mr-1.5" /> 近期的足跡</h4>
-                            {milestones.length > 0 ? (
-                                milestones.slice(0, 2).map((m, i) => (
-                                    <p key={i} className="text-sm text-slate-600 leading-relaxed truncate">{m.text}</p>
-                                ))
-                            ) : (
-                                <p className="text-sm text-slate-300 italic">尚未留下足跡...</p>
-                            )}
-                        </div>
-                    </div>
-                );
-            };
-
-            return (
-                <div className="w-full h-full overflow-y-auto px-6 py-8 hide-scrollbar">
-                    <div className="max-w-7xl mx-auto space-y-12 pb-24 text-left">
-                        <section className="space-y-6">
-                            <h2 className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center"><Layout size={14} className="mr-2.5" /> 正在書寫的篇章</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {activeProjects.map(p => renderCard(p, false))}
-                            </div>
-                        </section>
-                        {archivedProjects.length > 0 && (
-                            <section className="space-y-6">
-                                <h2 className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center"><Archive size={14} className="mr-2.5" /> 封存在記憶的箋紙</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {archivedProjects.map(p => renderCard(p, true))}
-                                </div>
-                            </section>
-                        )}
-                        {activeProjects.length === 0 && archivedProjects.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-400 py-20">
-                                <Layout size={64} className="mb-6 opacity-20" />
-                                <p className="serif text-base font-normal tracking-widest">空白的宣紙，正等待第一筆落墨...</p>
-                            </div>
-                        )}
-                    </div>
-
-                    {selectedProject && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4" onClick={() => setSelectedProject(null)}>
-                            <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-[40px] shadow-2xl flex flex-col overflow-hidden animate-scale-up" onClick={e => e.stopPropagation()}>
-                                <div className="p-8 flex items-center justify-between border-b border-slate-50">
-                                    <h2 className="serif text-2xl font-bold text-slate-700">{selectedProject.name}</h2>
-                                    <button onClick={() => setSelectedProject(null)} className="p-2 bg-slate-50 rounded-full"><X size={24} className="text-slate-300" /></button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-8 space-y-8 hide-scrollbar text-left">
-                                    {getMilestones(selectedProject.id).map((m, i) => (
-                                        <div key={i} className="flex space-x-4">
-                                            <span className="text-xs font-mono text-slate-300 mt-1">{m.dateStr}</span>
-                                            <div className="flex-1 bg-healing-bg p-4 rounded-2xl border border-slate-100">
-                                                <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap">{m.text}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const IdeasView = ({ ideas, projects, onAddIdea, onDeleteIdea }) => {
-            const [inputText, setInputText] = useState('');
-            const [selectedProjectIds, setSelectedProjectIds] = useState([]);
-            const [viewingIdea, setViewingIdea] = useState(null);
-
-            return (
-                <div className="w-full h-full flex flex-col bg-healing-bg overflow-hidden">
-                    <div className="flex-1 overflow-y-auto hide-scrollbar p-6 pb-24">
-                        <div className="max-w-3xl mx-auto mb-10">
-                            <form onSubmit={(e) => { e.preventDefault(); onAddIdea(inputText, selectedProjectIds); setInputText(''); setSelectedProjectIds([]); }} className="bg-white rounded-[32px] p-6 shadow-soft space-y-4 border border-slate-50">
-                                <textarea value={inputText} onChange={(e) => setInputText(e.target.value)} placeholder="捕捉此刻路過的靈光..." className="w-full min-h-[100px] text-lg bg-transparent resize-none text-slate-700 leading-relaxed" />
-                                <div className="flex items-center justify-between border-t border-slate-50 pt-4">
-                                    <div className="flex space-x-2 overflow-x-auto hide-scrollbar py-1">
-                                        {projects.map(p => (
-                                            <button key={p.id} type="button" onClick={() => setSelectedProjectIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id])} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${selectedProjectIds.includes(p.id) ? 'text-white' : 'bg-slate-50 text-slate-400'}`} style={{ backgroundColor: selectedProjectIds.includes(p.id) ? p.color : '' }}>{p.name}</button>
-                                        ))}
-                                    </div>
-                                    <button type="submit" disabled={!inputText.trim()} className="bg-slate-700 text-white p-3 rounded-2xl hover:bg-slate-800 disabled:opacity-20 transition-all shadow-md"><Send size={20} /></button>
-                                </div>
-                            </form>
-                        </div>
-                        <div className="max-w-3xl mx-auto columns-1 md:columns-2 gap-6">
-                            {ideas.map(idea => (
-                                <div key={idea.id} onClick={() => setViewingIdea(idea)} className="break-inside-avoid mb-6 bg-white/70 rounded-[24px] p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all cursor-pointer">
-                                    <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap">{idea.text}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {viewingIdea && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setViewingIdea(null)}>
-                            <div className="absolute inset-0 bg-[#FDFCF8]/95 backdrop-blur-md" />
-                            <div className="bg-[#FCF9F2] w-full max-w-2xl max-h-[80vh] rounded-[40px] shadow-2xl flex flex-col border border-white relative animate-book-open" onClick={e => e.stopPropagation()}>
-                                <div className="p-8 flex items-center justify-between">
-                                    <div className="flex items-center space-x-2 text-slate-300"><BookOpen size={20} /><span className="text-[10px] font-bold tracking-widest">靈光讀本</span></div>
-                                    <button onClick={() => setViewingIdea(null)} className="p-2 bg-white rounded-full"><X size={24} className="text-slate-300" /></button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto px-10 pb-16 hide-scrollbar text-left">
-                                    <div className="serif text-xl text-slate-600 leading-[2.2] whitespace-pre-wrap">{viewingIdea.text}</div>
-                                </div>
-                                <div className="p-8 flex justify-center border-t border-slate-50">
-                                    <button onClick={() => { if(confirm("確定遺忘此靈感？")) { onDeleteIdea(viewingIdea.id); setViewingIdea(null); } }} className="text-slate-300 hover:text-red-400"><Trash2 size={24} /></button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const App = () => {
-            const [activeTab, setActiveTab] = useState('matrix');
-            const [projects, setProjects] = useState([]);
-            const [matrix, setMatrix] = useState({});
-            const [ideas, setIdeas] = useState([]);
-            const [isLoaded, setIsLoaded] = useState(false);
-
-            const now = new Date();
-            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-            useEffect(() => {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    try {
-                        const parsed = JSON.parse(saved);
-                        setProjects(parsed.projects || []);
-                        setMatrix(parsed.matrix || {});
-                        setIdeas(parsed.ideas || []);
-                    } catch (e) {
-                        console.error("Failed to parse saved data", e);
-                    }
-                }
-                setIsLoaded(true);
-            }, []);
-
-            useEffect(() => {
-                if (isLoaded) {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify({ projects, matrix, ideas }));
-                }
-            }, [projects, matrix, ideas, isLoaded]);
-
-            const updateProject = (id, updates) => {
-                setProjects(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-            };
-
-            const addProject = () => {
-                const activeOnes = projects.filter(p => !p.archived);
-                if (activeOnes.length >= 9) return alert("上限 9 個項目");
-                const newProject = {
-                    id: Date.now(),
-                    name: `項目 ${projects.length + 1}`,
-                    color: MORANDI_COLORS[projects.length % MORANDI_COLORS.length],
-                    archived: false
-                };
-                setProjects([...projects, newProject]);
-            };
-
-            const updateMatrixCell = (day, projectId, value) => {
-                const dayStr = String(day).padStart(2, '0');
-                const key = `${currentMonthStr}-${dayStr}-${projectId}`;
-                setMatrix(prev => ({ ...prev, [key]: value }));
-            };
-
-            const addIdea = (text, projectIds) => {
-                const newIdea = {
-                    id: Date.now().toString(),
-                    text,
-                    projectIds,
-                    timestamp: Date.now(),
-                    hidden: false
-                };
-                setIdeas([newIdea, ...ideas]);
-            };
-
-            if (!isLoaded) return <div className="h-screen w-screen flex items-center justify-center bg-healing-bg serif text-slate-300">正在展開長箋...</div>;
-
-            return (
-                <div className="flex flex-col h-screen max-h-screen overflow-hidden text-slate-800">
-                    <header className="flex-none px-6 pt-8 pb-4 bg-healing-bg border-b border-slate-100 flex items-center justify-between z-50">
-                        <div className="text-left">
-                            <h1 className="serif text-3xl font-bold tracking-wider text-slate-700">拾光長箋</h1>
-                            <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-medium">Capture the Micro-light</p>
-                        </div>
-                        <nav className="flex items-center space-x-1 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl shadow-soft">
-                            <TabButton active={activeTab === 'matrix'} onClick={() => setActiveTab('matrix')} icon={<Calendar size={18} />} label="拾光矩陣" />
-                            <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<Scroll size={18} />} label="歲月長卷" />
-                            <TabButton active={activeTab === 'ideas'} onClick={() => setActiveTab('ideas')} icon={<Sparkles size={18} />} label="靈光碎影" />
-                            <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={18} />} label="設置" />
-                        </nav>
-                    </header>
-                    <main className="flex-1 overflow-hidden relative bg-healing-bg">
-                        {activeTab === 'matrix' && (
-                            <MatrixView 
-                                projects={projects} 
-                                matrix={matrix} 
-                                selectedMonth={currentMonthStr}
-                                onCellUpdate={updateMatrixCell} 
-                                onProjectUpdate={updateProject} 
-                                onAddProject={addProject}
-                                onDeleteProject={(id) => setProjects(projects.filter(p => p.id !== id))}
-                            />
-                        )}
-                        {activeTab === 'dashboard' && (
-                            <DashboardView 
-                                projects={projects} 
-                                matrix={matrix} 
-                                ideas={ideas} 
-                                onProjectUpdate={updateProject} 
-                            />
-                        )}
-                        {activeTab === 'ideas' && (
-                            <IdeasView 
-                                ideas={ideas} 
-                                projects={projects.filter(p => !p.archived)} 
-                                onAddIdea={addIdea} 
-                                onDeleteIdea={(id) => setIdeas(ideas.filter(i => i.id !== id))} 
-                            />
-                        )}
-                        {activeTab === 'settings' && (
-                            <div className="p-10 space-y-8 max-w-lg mx-auto text-center">
-                                <div className="w-16 h-16 bg-white rounded-3xl shadow-soft flex items-center justify-center mx-auto border border-slate-50">
-                                    <Heart size={32} className="text-morandi-pink" />
-                                </div>
-                                <h2 className="serif text-2xl font-bold text-slate-700">數據安全與備份</h2>
-                                <p className="text-sm text-slate-400">數據保存在本地瀏覽器。請定期導出 JSON 文件以備份數據至您的 iCloud Drive。</p>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button 
-                                        onClick={() => {
-                                            const blob = new Blob([JSON.stringify({ projects, matrix, ideas }, null, 2)], { type: 'application/json' });
-                                            const a = document.createElement('a');
-                                            a.href = URL.createObjectURL(blob);
-                                            a.download = '拾光長箋_備份.json';
-                                            a.click();
-                                        }}
-                                        className="bg-slate-700 text-white p-4 rounded-3xl flex items-center justify-center space-x-2"
-                                    >
-                                        <Download size={20} />
-                                        <span>導出備份</span>
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            const input = document.createElement('input');
-                                            input.type = 'file';
-                                            input.accept = '.json';
-                                            input.onchange = (e) => {
-                                                const reader = new FileReader();
-                                                reader.onload = (ev) => {
-                                                    const p = JSON.parse(ev.target.result);
-                                                    setProjects(p.projects || []);
-                                                    setMatrix(p.matrix || {});
-                                                    setIdeas(p.ideas || []);
-                                                    alert("導入成功");
-                                                };
-                                                reader.readAsText(e.target.files[0]);
-                                            };
-                                            input.click();
-                                        }}
-                                        className="bg-white border-2 border-slate-100 text-slate-600 p-4 rounded-3xl flex items-center justify-center space-x-2"
-                                    >
-                                        <Upload size={20} />
-                                        <span>導入備份</span>
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </main>
-                </div>
-            );
-        };
-
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
-    </script>
 </body>
 </html>
