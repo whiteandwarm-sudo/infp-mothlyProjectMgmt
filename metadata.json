@@ -1,0 +1,9 @@
+{
+  "name": "拾光長箋 (Timeless Epistles)",
+  "description": "A healing, low-friction project management tool designed for INFPs, focusing on micro-startups and monthly progress.",
+  "requestFramePermissions": [],
+  "short_name": "拾光長箋",
+  "theme_color": "#FDFCF8",
+  "background_color": "#FDFCF8",
+  "display": "standalone"
+}
