@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="拾光長箋">
     
-    <!-- External Libraries (UMD) -->
+    <!-- Scripts: React UMD, Babel, Lucide, Tailwind -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -72,33 +72,21 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
 </head>
 <body class="bg-healing-bg">
     <div id="root"></div>
 
-    <!-- React App logic with Babel -->
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
         const { 
             Calendar, Layout, Lightbulb, Settings, Download, Upload, Plus, Trash2, 
             CheckCircle2, ChevronRight, Sparkles, Scroll, Wind, Archive, X, 
-            ChevronDown, Mountain, BookOpen, Send, RotateCcw, Heart, Info, SlidersHorizontal, Search, Eye, EyeOff
+            ChevronDown, Mountain, BookOpen, Send, RotateCcw, Heart, Info, SlidersHorizontal, Search, Eye, EyeOff, Clock
         } = LucideReact;
 
-        // Constants
         const STORAGE_KEY = 'timeless_epistles_data_v1';
         const MORANDI_COLORS = ['#E2B4BD', '#9DBEBB', '#778DA9', '#A3B18A', '#D4A373', '#BC8A5F', '#957DAD', '#FFD1DC', '#D6E2E9'];
 
-        // Helper: Tab Button
         const TabButton = ({ active, onClick, icon, label }) => (
             <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${active ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
                 {icon}
@@ -106,7 +94,6 @@
             </button>
         );
 
-        // Matrix View Component
         const MatrixView = ({ projects, matrix, selectedMonth, onCellUpdate, onProjectUpdate, onAddProject, onDeleteProject }) => {
             const days = Array.from({ length: 31 }, (_, i) => i + 1);
             const [editingProject, setEditingProject] = useState(null);
@@ -199,7 +186,6 @@
             );
         };
 
-        // Dashboard View Component
         const DashboardView = ({ projects, matrix, ideas, onProjectUpdate }) => {
             const [selectedProject, setSelectedProject] = useState(null);
             const activeProjects = projects.filter(p => !p.archived);
@@ -267,7 +253,6 @@
             );
         };
 
-        // Ideas View Component
         const IdeasView = ({ ideas, projects, onAddIdea, onDeleteIdea }) => {
             const [inputText, setInputText] = useState('');
             const [selectedProjectIds, setSelectedProjectIds] = useState([]);
@@ -318,7 +303,6 @@
             );
         };
 
-        // Main Application
         const App = () => {
             const [activeTab, setActiveTab] = useState('matrix');
             const [projects, setProjects] = useState([]);
