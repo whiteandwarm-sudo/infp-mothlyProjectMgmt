@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>拾光長箋 - 捕捉歲月的微光</title>
     
-    <!-- iPad PWA Optimization -->
+    <!-- PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="拾光長箋">
     
-    <!-- Scripts: React UMD, Babel, Lucide, Tailwind -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide-react"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script>
         tailwind.config = {
             theme: {
@@ -29,67 +23,44 @@
                         'morandi-green': '#A3B18A',
                         'morandi-brown': '#D4A373'
                     },
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-                    }
+                    boxShadow: { 'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)' }
                 }
             }
         }
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500&display=swap');
-        
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #FDFCF8;
-            -webkit-tap-highlight-color: transparent;
-            overflow: hidden; 
-            margin: 0;
-            height: 100vh;
-        }
-
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFCF8; margin: 0; height: 100vh; overflow: hidden; }
         .serif { font-family: 'Noto Serif TC', serif; }
-
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
         input:focus, textarea:focus { outline: none; }
-
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        @keyframes scaleUp {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
+        @keyframes scaleUp { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .animate-scale-up { animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-        @keyframes bookOpen {
-          from { opacity: 0; transform: scale(0.94) translateY(30px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-book-open { animation: bookOpen 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
     </style>
 </head>
-<body class="bg-healing-bg">
+<body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
-        const { 
-            Calendar, Layout, Lightbulb, Settings, Download, Upload, Plus, Trash2, 
-            CheckCircle2, ChevronRight, Sparkles, Scroll, Wind, Archive, X, 
-            ChevronDown, Mountain, BookOpen, Send, RotateCcw, Heart, Info, SlidersHorizontal, Search, Eye, EyeOff, Clock
-        } = LucideReact;
+    <!-- 使用 ESM 模式加載 React，不依賴 Babel Standalone -->
+    <script type="module">
+        import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+        import * as LucideIcons from 'https://esm.sh/lucide-react@0.284.0';
 
         const STORAGE_KEY = 'timeless_epistles_data_v1';
         const MORANDI_COLORS = ['#E2B4BD', '#9DBEBB', '#778DA9', '#A3B18A', '#D4A373', '#BC8A5F', '#957DAD', '#FFD1DC', '#D6E2E9'];
 
-        const TabButton = ({ active, onClick, icon, label }) => (
+        // 安全圖標組件：防止圖標缺失導致白屏
+        const Icon = ({ name, ...props }) => {
+            const LucideIcon = LucideIcons[name];
+            if (!LucideIcon) return <div className="w-5 h-5 bg-slate-100 rounded-full" />;
+            return <LucideIcon {...props} />;
+        };
+
+        const TabButton = ({ active, onClick, iconName, label }) => (
             <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${active ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}>
-                {icon}
+                <Icon name={iconName} size={18} />
                 <span className="text-sm font-medium hidden md:inline">{label}</span>
             </button>
         );
@@ -105,9 +76,9 @@
             return (
                 <div className="w-full h-full relative overflow-auto hide-scrollbar px-6 py-4">
                     {projectsToShow.length === 0 ? (
-                        <div className="h-full w-full flex flex-col items-center justify-center space-y-6 animate-fade-in">
+                        <div className="h-full w-full flex flex-col items-center justify-center space-y-6">
                             <div className="w-24 h-24 bg-white rounded-[40px] shadow-soft flex items-center justify-center border border-slate-50/50">
-                                <Mountain size={48} className="text-[#cbb9d6] opacity-60" />
+                                <Icon name="Mountain" size={48} className="text-[#cbb9d6] opacity-60" />
                             </div>
                             <div className="text-center space-y-2">
                                 <p className="serif text-xl text-slate-500 font-medium tracking-widest">當你決定爬山時，你已經在山頂了。</p>
@@ -161,7 +132,7 @@
                     )}
                     {projectsToShow.length < 9 && (
                         <button onClick={onAddProject} className="fixed bottom-8 right-8 w-14 h-14 bg-[#cbb9d6] text-white rounded-full shadow-lg hover:scale-110 active:scale-95 transition-all flex items-center justify-center z-50">
-                            <Plus size={28} />
+                            <Icon name="Plus" size={28} />
                         </button>
                     )}
                     {editingProject && (
@@ -169,13 +140,13 @@
                             <div className="bg-white w-full max-w-sm rounded-[32px] shadow-2xl p-8 space-y-6 border border-slate-50 animate-scale-up">
                                 <div className="flex justify-between items-center">
                                     <h3 className="serif text-xl font-bold text-slate-700">管理長箋</h3>
-                                    <button onClick={() => setEditingProject(null)}><X size={20} className="text-slate-300" /></button>
+                                    <button onClick={() => setEditingProject(null)}><Icon name="X" size={20} className="text-slate-300" /></button>
                                 </div>
                                 <div className="space-y-4">
                                     <input type="text" value={editingProject.name} onChange={(e) => setEditingProject({...editingProject, name: e.target.value})} className="w-full bg-slate-50 rounded-2xl px-4 py-3 text-slate-700" />
                                     <div className="grid grid-cols-2 gap-3">
-                                        <button onClick={() => { onProjectUpdate(editingProject.id, { name: editingProject.name, archived: true }); setEditingProject(null); }} className="bg-slate-50 text-slate-600 py-3 rounded-2xl hover:bg-slate-100 transition-colors flex items-center justify-center space-x-2"><Archive size={16} /><span>歸檔</span></button>
-                                        <button onClick={() => { if(confirm("確定永久刪除？")) { onDeleteProject(editingProject.id); setEditingProject(null); } }} className="bg-red-50 text-red-400 py-3 rounded-2xl hover:bg-red-100 flex items-center justify-center space-x-2"><Trash2 size={16} /><span>刪除</span></button>
+                                        <button onClick={() => { onProjectUpdate(editingProject.id, { name: editingProject.name, archived: true }); setEditingProject(null); }} className="bg-slate-50 text-slate-600 py-3 rounded-2xl hover:bg-slate-100 transition-colors flex items-center justify-center space-x-2"><Icon name="Archive" size={16} /><span>歸檔</span></button>
+                                        <button onClick={() => { if(confirm("確定永久刪除？")) { onDeleteProject(editingProject.id); setEditingProject(null); } }} className="bg-red-50 text-red-400 py-3 rounded-2xl hover:bg-red-100 flex items-center justify-center space-x-2"><Icon name="Trash2" size={16} /><span>刪除</span></button>
                                     </div>
                                     <button onClick={() => { onProjectUpdate(editingProject.id, { name: editingProject.name }); setEditingProject(null); }} className="w-full bg-slate-700 text-white py-4 rounded-2xl shadow-md hover:bg-slate-800 transition-colors font-bold">保存修改</button>
                                 </div>
@@ -205,10 +176,10 @@
                                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: project.color }} />
                                 <h3 className="text-xl font-bold text-slate-700 serif truncate max-w-[150px]">{project.name}</h3>
                             </div>
-                            {isArchived ? <RotateCcw size={18} className="text-slate-300" /> : <ChevronRight size={20} className="text-slate-200" />}
+                            {isArchived ? <Icon name="RotateCcw" size={18} className="text-slate-300" /> : <Icon name="ChevronRight" size={20} className="text-slate-200" />}
                         </div>
                         <div className="space-y-4">
-                            <h4 className="text-xs uppercase tracking-widest text-slate-400 font-bold flex items-center"><CheckCircle2 size={14} className="mr-1.5" /> 近期的足跡</h4>
+                            <h4 className="text-xs uppercase tracking-widest text-slate-400 font-bold flex items-center"><Icon name="CheckCircle2" size={14} className="mr-1.5" /> 近期的足跡</h4>
                             {milestones.length > 0 ? milestones.slice(0, 2).map((m, i) => (
                                 <p key={i} className="text-sm text-slate-600 leading-relaxed truncate">{m.text}</p>
                             )) : <p className="text-sm text-slate-300 italic">尚未留下足跡...</p>}
@@ -221,12 +192,12 @@
                 <div className="w-full h-full overflow-y-auto px-6 py-8 hide-scrollbar">
                     <div className="max-w-7xl mx-auto space-y-12 pb-24 text-left">
                         <section className="space-y-6">
-                            <h2 className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center"><Layout size={14} className="mr-2.5" /> 正在書寫的篇章</h2>
+                            <h2 className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center"><Icon name="Layout" size={14} className="mr-2.5" /> 正在書寫的篇章</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{activeProjects.map(p => renderCard(p, false))}</div>
                         </section>
                         {archivedProjects.length > 0 && (
                             <section className="space-y-6">
-                                <h2 className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center"><Archive size={14} className="mr-2.5" /> 封存在記憶的箋紙</h2>
+                                <h2 className="text-xs uppercase tracking-[0.3em] text-slate-400 font-bold flex items-center"><Icon name="Archive" size={14} className="mr-2.5" /> 封存在記憶的箋紙</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{archivedProjects.map(p => renderCard(p, true))}</div>
                             </section>
                         )}
@@ -236,7 +207,7 @@
                             <div className="bg-white w-full max-w-2xl max-h-[80vh] rounded-[40px] shadow-2xl flex flex-col overflow-hidden animate-scale-up" onClick={e => e.stopPropagation()}>
                                 <div className="p-8 flex items-center justify-between border-b border-slate-50">
                                     <h2 className="serif text-2xl font-bold text-slate-700">{selectedProject.name}</h2>
-                                    <button onClick={() => setSelectedProject(null)} className="p-2 bg-slate-50 rounded-full"><X size={24} className="text-slate-300" /></button>
+                                    <button onClick={() => setSelectedProject(null)} className="p-2 bg-slate-50 rounded-full"><Icon name="X" size={24} className="text-slate-300" /></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto p-8 space-y-8 hide-scrollbar text-left">
                                     {getMilestones(selectedProject.id).map((m, i) => (
@@ -270,7 +241,7 @@
                                             <button key={p.id} type="button" onClick={() => setSelectedProjectIds(prev => prev.includes(p.id) ? prev.filter(id => id !== p.id) : [...prev, p.id])} className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${selectedProjectIds.includes(p.id) ? 'text-white' : 'bg-slate-50 text-slate-400'}`} style={{ backgroundColor: selectedProjectIds.includes(p.id) ? p.color : '' }}>{p.name}</button>
                                         ))}
                                     </div>
-                                    <button type="submit" disabled={!inputText.trim()} className="bg-slate-700 text-white p-3 rounded-2xl hover:bg-slate-800 disabled:opacity-20 transition-all shadow-md"><Send size={20} /></button>
+                                    <button type="submit" disabled={!inputText.trim()} className="bg-slate-700 text-white p-3 rounded-2xl hover:bg-slate-800 disabled:opacity-20 transition-all shadow-md"><Icon name="Send" size={20} /></button>
                                 </div>
                             </form>
                         </div>
@@ -285,16 +256,16 @@
                     {viewingIdea && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setViewingIdea(null)}>
                             <div className="absolute inset-0 bg-[#FDFCF8]/95 backdrop-blur-md" />
-                            <div className="bg-[#FCF9F2] w-full max-w-2xl max-h-[80vh] rounded-[40px] shadow-2xl flex flex-col border border-white relative animate-book-open" onClick={e => e.stopPropagation()}>
+                            <div className="bg-[#FCF9F2] w-full max-w-2xl max-h-[80vh] rounded-[40px] shadow-2xl flex flex-col border border-white relative" onClick={e => e.stopPropagation()}>
                                 <div className="p-8 flex items-center justify-between">
-                                    <div className="flex items-center space-x-2 text-slate-300"><BookOpen size={20} /><span className="text-[10px] font-bold tracking-widest">靈光讀本</span></div>
-                                    <button onClick={() => setViewingIdea(null)} className="p-2 bg-white rounded-full"><X size={24} className="text-slate-300" /></button>
+                                    <div className="flex items-center space-x-2 text-slate-300"><Icon name="BookOpen" size={20} /><span className="text-[10px] font-bold tracking-widest">靈光讀本</span></div>
+                                    <button onClick={() => setViewingIdea(null)} className="p-2 bg-white rounded-full"><Icon name="X" size={24} className="text-slate-300" /></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto px-10 pb-16 hide-scrollbar text-left">
                                     <div className="serif text-xl text-slate-600 leading-[2.2] whitespace-pre-wrap">{viewingIdea.text}</div>
                                 </div>
                                 <div className="p-8 flex justify-center border-t border-slate-50">
-                                    <button onClick={() => { if(confirm("確定遺忘此靈感？")) { onDeleteIdea(viewingIdea.id); setViewingIdea(null); } }} className="text-slate-300 hover:text-red-400"><Trash2 size={24} /></button>
+                                    <button onClick={() => { if(confirm("確定遺忘此靈感？")) { onDeleteIdea(viewingIdea.id); setViewingIdea(null); } }} className="text-slate-300 hover:text-red-400"><Icon name="Trash2" size={24} /></button>
                                 </div>
                             </div>
                         </div>
@@ -337,20 +308,20 @@
             const updateMatrixCell = (day, projectId, value) => setMatrix(prev => ({ ...prev, [`${currentMonthStr}-${String(day).padStart(2, '0')}-${projectId}`]: value }));
             const addIdea = (text, pIds) => setIdeas([{ id: Date.now().toString(), text, projectIds: pIds, timestamp: Date.now(), hidden: false }, ...ideas]);
 
-            if (!isLoaded) return <div className="h-screen w-screen flex items-center justify-center bg-healing-bg serif text-slate-300">正在展開長箋...</div>;
+            if (!isLoaded) return null;
 
             return (
                 <div className="flex flex-col h-screen max-h-screen overflow-hidden text-slate-800">
                     <header className="flex-none px-6 pt-8 pb-4 bg-healing-bg border-b border-slate-100 flex items-center justify-between z-50">
-                        <div>
+                        <div className="text-left">
                             <h1 className="serif text-3xl font-bold tracking-wider text-slate-700">拾光長箋</h1>
                             <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-medium">Capture the Micro-light</p>
                         </div>
                         <nav className="flex items-center space-x-1 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl shadow-soft">
-                            <TabButton active={activeTab === 'matrix'} onClick={() => setActiveTab('matrix')} icon={<Calendar size={18} />} label="拾光矩陣" />
-                            <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<Scroll size={18} />} label="歲月長卷" />
-                            <TabButton active={activeTab === 'ideas'} onClick={() => setActiveTab('ideas')} icon={<Sparkles size={18} />} label="靈光碎影" />
-                            <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={18} />} label="設置" />
+                            <TabButton active={activeTab === 'matrix'} onClick={() => setActiveTab('matrix')} iconName="Calendar" label="拾光矩陣" />
+                            <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} iconName="Scroll" label="歲月長卷" />
+                            <TabButton active={activeTab === 'ideas'} onClick={() => setActiveTab('ideas')} iconName="Sparkles" label="靈光碎影" />
+                            <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} iconName="Settings" label="設置" />
                         </nav>
                     </header>
                     <main className="flex-1 overflow-hidden relative bg-healing-bg">
@@ -359,12 +330,12 @@
                         {activeTab === 'ideas' && <IdeasView ideas={ideas} projects={projects.filter(p => !p.archived)} onAddIdea={addIdea} onDeleteIdea={id => setIdeas(ideas.filter(i => i.id !== id))} />}
                         {activeTab === 'settings' && (
                             <div className="p-10 space-y-8 max-w-lg mx-auto text-center">
-                                <div className="w-16 h-16 bg-white rounded-3xl shadow-soft flex items-center justify-center mx-auto border border-slate-50"><Heart size={32} className="text-morandi-pink" /></div>
+                                <div className="w-16 h-16 bg-white rounded-3xl shadow-soft flex items-center justify-center mx-auto border border-slate-50"><Icon name="Heart" size={32} className="text-morandi-pink" /></div>
                                 <h2 className="serif text-2xl font-bold text-slate-700">數據安全與備份</h2>
                                 <p className="text-sm text-slate-400">數據保存在本地瀏覽器。請定期導出 JSON 文件以備份數據至您的 iCloud Drive。</p>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => { const blob = new Blob([JSON.stringify({ projects, matrix, ideas }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '拾光長箋_備份.json'; a.click(); }} className="bg-slate-700 text-white p-4 rounded-3xl flex items-center justify-center space-x-2"><Download size={20} /><span>導出</span></button>
-                                    <button onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { const reader = new FileReader(); reader.onload = (ev) => { const p = JSON.parse(ev.target.result); setProjects(p.projects); setMatrix(p.matrix); setIdeas(p.ideas); alert("導入成功"); }; reader.readAsText(e.target.files[0]); }; input.click(); }} className="bg-white border-2 border-slate-100 text-slate-600 p-4 rounded-3xl flex items-center justify-center space-x-2"><Upload size={20} /><span>導入</span></button>
+                                    <button onClick={() => { const blob = new Blob([JSON.stringify({ projects, matrix, ideas }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '拾光長箋_備份.json'; a.click(); }} className="bg-slate-700 text-white p-4 rounded-3xl flex items-center justify-center space-x-2"><Icon name="Download" size={20} /><span>導出</span></button>
+                                    <button onClick={() => { const input = document.createElement('input'); input.type = 'file'; input.accept = '.json'; input.onchange = (e) => { const reader = new FileReader(); reader.onload = (ev) => { const p = JSON.parse(ev.target.result); setProjects(p.projects); setMatrix(p.matrix); setIdeas(p.ideas); alert("導入成功"); }; reader.readAsText(e.target.files[0]); }; input.click(); }} className="bg-white border-2 border-slate-100 text-slate-600 p-4 rounded-3xl flex items-center justify-center space-x-2"><Icon name="Upload" size={20} /><span>導入</span></button>
                                 </div>
                             </div>
                         )}
@@ -373,8 +344,7 @@
             );
         };
 
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
