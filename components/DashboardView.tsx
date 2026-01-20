@@ -17,7 +17,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ projects, matrix, ideas, 
   const archivedProjects = projects.filter(p => p.archived);
 
   const getProjectStartDate = (pid: number) => {
-    const keys = Object.keys(matrix).filter(k => k.endsWith(`-${pid}`) && matrix[k].trim() !== '').sort();
+    // FIX: Add type assertion to matrix[k] to resolve 'unknown' type error on .trim()
+    const keys = Object.keys(matrix).filter(k => k.endsWith(`-${pid}`) && (matrix[k] as string).trim() !== '').sort();
     if (keys.length === 0) return null;
     return keys[0].split('-').slice(0, 3).join('-');
   };
@@ -29,10 +30,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ projects, matrix, ideas, 
 
   const getMilestones = (projectId: number) => {
     return Object.entries(matrix)
-      .filter(([key, val]) => key.endsWith(`-${projectId}`) && val.trim() !== '')
+      // FIX: Ensure val is treated as a string before calling .trim()
+      .filter(([key, val]) => key.endsWith(`-${projectId}`) && (val as string).trim() !== '')
       .map(([key, val]) => ({
         dateStr: key.split('-').slice(0, 3).join('-'),
-        text: val
+        text: val as string
       }))
       .sort((a, b) => b.dateStr.localeCompare(a.dateStr));
   };
@@ -101,7 +103,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ projects, matrix, ideas, 
                       {m.dateStr.slice(5)}
                     </span>
                     <p className="text-base text-slate-600 leading-relaxed font-medium">
-                      {truncateText(m.text)}
+                      {/* FIX: Cast m.text to string to resolve 'unknown' type error */}
+                      {truncateText(m.text as string)}
                     </p>
                   </div>
                 ))}
@@ -229,7 +232,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ projects, matrix, ideas, 
                       <div key={idx} className="flex space-x-6 group">
                         <span className="text-sm font-mono text-slate-300 mt-1.5 whitespace-nowrap font-medium">{m.dateStr}</span>
                         <div className="flex-1 bg-healing-bg p-5 rounded-3xl border border-slate-100 group-hover:border-[#cbb9d6]/30 transition-colors shadow-sm">
-                          <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap font-medium">{m.text}</p>
+                          {/* FIX: Cast m.text to string to resolve 'unknown' is not assignable to type 'ReactNode' */}
+                          <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap font-medium">{m.text as string}</p>
                         </div>
                       </div>
                     ))
